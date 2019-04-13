@@ -134,11 +134,22 @@ contexts:
             - include: expression
         - match: '(?<!{{eol}})'
           pop: true
-    # Label
+    # Labelled statement
     - match: '({{id}}(?!{{reserved_id}}))\s*(:)\s*(?=(do|for|while){{id_break}})'
       captures:
         1: entity.name.label.as
         2: keyword.control.flow.as
+    # Var binding (with illegal name)
+    - match: '({{reserved_id}})[ \n\r]*(:)'
+      captures:
+        1: invalid.as
+        2: keyword.control.flow.as
+      push: qual_id_type
+    # Var binding
+    - match: '{{id}}[ \n\r]*(:)'
+      captures:
+        1: keyword.control.flow.as
+      push: qual_id_type
 
   switch_after_discriminant:
     - include: ws
@@ -169,51 +180,33 @@ contexts:
     - match: '(?<!{{eol}})'
       pop: true
 
-  # For loops are a bit boring since they
-  # may contain comments between and are
-  # either `in` or traditional.
+  # for (;;)
+  # for (binding in it)
 
   for_s0:
     - include: ws
     - match: '(var|const){{id_break}}'
       scope: storage.type.as
-      set: for_after_varkw
     - match: '{{id}}(\s*\.\s*{{id}})*'
-      set: for_kind
     - match: '(?<!{{eol}})'
-      set: for_manual
+      set: for_parens
 
-  for_after_varkw:
+  for_parens:
     - include: ws
     - match: '{{reserved_id}}'
       scope: invalid.as
     - match: '{{id}}'
+    - match: ','
+      scope: punctuation.separator.as
       set:
         - include: ws
-        - match: ':'
+        - match: '{{id}}'
+        - match: '\:'
           scope: keyword.control.flow.as
           push: qual_id_type
-        - include: for_kind
         - match: '(?<!{{eol}})'
           set: paren_expression
-    - match: '(?<!{{eol}})'
-      set: paren_expression
-
-  for_kind:
-    - include: ws
-    - match: 'in{{id_break}}'
-      scope: keyword.control.flow.as
-      set: paren_expression
-    - match: '(?<!{{eol}})'
-      set: for_manual
-
-  for_manual:
-    - include: ws
-    - match: '\;'
-    - match: \)
-      scope: punctuation.section.parens.end.as
-      pop: true
-    - include: expression
+    - include: paren_expression
 
   for_each_s0:
     - include: ws
@@ -345,6 +338,9 @@ contexts:
         - match: '\]\]>'
           pop: true
 
+    - match: '\.\.\.'
+      scope: invalid.as
+
     # #### Punc-based ops
     #
     # Both '..' and '..=' are valid as they may
@@ -372,7 +368,7 @@ contexts:
         - match: '(?<!{{eol}})'
           pop: true
 
-    - match: '@|\.\s*\('
+    - match: '\.[\s\t]*\('
       scope: invalid.deprecated.as
 
     - match: >-
@@ -382,7 +378,8 @@ contexts:
       push: ambiguable_operator
 
     - match: '\.\s*<'
-      scope: keyword.operator.as
+      scope: storage.type.as
+      push: qual_id_type_gen
 
     - match: '\.'
       scope: punctuation.accessor.dot.as
@@ -446,6 +443,9 @@ contexts:
   ws:
     - match: '[\x20\x09\x0B\x0C\p{Zs}]'
     - match: '{{eol}}'
+    - include: comments
+
+  comments:
     - match: '(//)(.*$)'
       scope: comment.line.as
     - match: '/\*'
@@ -551,7 +551,6 @@ contexts:
       push: interface_definition
     - match: '(var|const){{id_break}}'
       scope: storage.type.as
-      push: var_definition
     - match: '(function){{id_break}}'
       scope: storage.type.as
       push: fndef_name
@@ -581,7 +580,6 @@ contexts:
       captures:
         1: storage.modifier.as
         2: storage.type.as
-      push: var_definition
     - match: '({{id}})\s+(function){{id_break}}'
       captures:
         1: storage.modifier.as
@@ -606,7 +604,7 @@ contexts:
       set: interface_definition
     - match: '(var|const){{id_break}}'
       scope: storage.type.as
-      set: var_definition
+      pop: true
     - match: '(function){{id_break}}'
       scope: storage.type.as
       set: fndef_name
@@ -706,13 +704,6 @@ contexts:
     - match: \,
       scope: punctuation.separator.sequence.as
     - match: '(?<!{{eol}})'
-      pop: true
-
-  var_definition:
-    - match: '{{reserved_id}}'
-      scope: invalid.as
-      pop: true
-    - match: '{{id}}|$'
       pop: true
 
   fndef_name:
@@ -878,6 +869,11 @@ contexts:
 
   qual_id_type:
     - match: '(\s*|{{eol}})*'
+    - include: qual_id_type_unmanaged
+    - match: ''
+      pop: true
+
+  qual_id_type_unmanaged:
     - match: '{{id}}'
       scope: storage.type.as
       set:
@@ -900,8 +896,6 @@ contexts:
       scope: punctuation.accessor.double-colon.as
     - match: '\*'
       scope: storage.type.as
-      pop: true
-    - match: ''
       pop: true
 
   qual_id_type_gen:
