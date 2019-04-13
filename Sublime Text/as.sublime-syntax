@@ -140,13 +140,13 @@ contexts:
         1: entity.name.label.as
         2: keyword.control.flow.as
     # Var binding (with illegal name)
-    - match: '({{reserved_id}})[ \n\r]*(:)'
+    - match: '({{reserved_id}})[ \n\r]*(:)]'
       captures:
         1: invalid.as
         2: keyword.control.flow.as
       push: qual_id_type
     # Var binding
-    - match: '{{id}}[ \n\r]*(:)'
+    - match: '{{id}}[ \n\r]*(:)(?!:)'
       captures:
         1: keyword.control.flow.as
       push: qual_id_type
