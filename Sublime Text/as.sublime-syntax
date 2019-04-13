@@ -6,8 +6,7 @@
 # * directives and packages are mixed;
 # * meta-data replaces array-expr' statements when
 #   appropriate;
-# * E4X isn't valid (also deprecated and such),
-#   but `CDATA` markups are going fine!
+# * E4X literals aren't highlighted (just the CDATA markup).
 
 name: ActionScript Enh.
 file_extensions: [as, as3]
@@ -341,12 +340,8 @@ contexts:
     - match: '\.\.\.'
       scope: invalid.as
 
-    # #### Punc-based ops
-    #
-    # Both '..' and '..=' are valid as they may
-    # come in a future AS version to replace the
-    # obsolete-E4X descendants operator.
-    #
+    # #### Punctuator ops
+
     - match: >-
         (?x) ==?=? |
             (\+[+=]?) | (\-[-=]?)
@@ -355,7 +350,7 @@ contexts:
           | ~      | (\|(\|=?|=?)?) | (&(&=?|=?)?)
           | (\^=?) | (<(<=?|=?))    | (>(>(>=?|=?)|=?))
           | !=?=?
-          | \.\.=?
+          | \.\.
       scope: keyword.operator.as
 
     - match: '\?'
@@ -367,9 +362,6 @@ contexts:
         - include: expression
         - match: '(?<!{{eol}})'
           pop: true
-
-    - match: '\.[\s\t]*\('
-      scope: invalid.deprecated.as
 
     - match: >-
         (?x)  0[Xx]{{hex_digit}}+
