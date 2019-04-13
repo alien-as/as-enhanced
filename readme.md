@@ -4,4 +4,4 @@ A more flexible ActionScript syntax definition.
 
 ## Screenshots
 
-![](https://i.imgur.com/RjZOLdG.png)
+![](https://i.imgur.com/DXawqOZ.png)
